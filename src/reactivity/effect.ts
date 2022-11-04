@@ -1,6 +1,8 @@
 class ReactiveEffect {
   private _fn: Function;
   public scheduler: Function | null = null;
+  public deps = [];
+  private _active = true;
   constructor(fn: Function, scheduler?: Function) {
     this._fn = fn;
     if (scheduler) this.scheduler = scheduler;
@@ -9,13 +11,23 @@ class ReactiveEffect {
     activeEffect = this;
     return this._fn();
   }
+  stop() {
+    if (this._active) {
+      cleanupEffect(this);
+      this._active = false;
+    }
+  }
+}
+//删除effect
+function cleanupEffect(effect: ReactiveEffect) {
+  effect.deps.forEach((dep: any) => dep.delete(effect));
 }
 //用于保存不同对象的depsMap
 const targetMap = new WeakMap();
 export function track(target: object, key: any) {
-  //target -> key -> dep
+  // target -> key -> dep
   // const dep = new Set();
-  //先获取到指定对象的depsMap
+  // 先获取到指定对象的depsMap
   let depsMap = targetMap.get(target);
   //如果不存在则添加一个
   if (!depsMap) {
@@ -28,6 +40,8 @@ export function track(target: object, key: any) {
   }
   //并存储effect
   dep.add(activeEffect);
+  //同时保存对应的dep以方便调用stop时进行删除
+  activeEffect.deps.push(dep);
 }
 
 export function trigger(target: object, key: any) {
@@ -53,5 +67,11 @@ let activeEffect: any;
 export function effect(fn: Function, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler);
   _effect.run();
-  return _effect.run.bind(_effect);
+  const runner: any = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  return runner;
+}
+
+export function stop(runner: any) {
+  runner.effect.stop();
 }

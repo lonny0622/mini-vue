@@ -1,4 +1,4 @@
-import { effect } from "../effect";
+import { effect, stop } from "../effect";
 import { reactive } from "../reactive";
 
 describe("effect", () => {
@@ -46,12 +46,32 @@ describe("effect", () => {
       },
       { scheduler }
     );
+    // 第一次调用时会触发 effect 不会触发scheduler
     expect(scheduler).not.toHaveBeenCalled();
     expect(dummy).toBe(1);
+
+    // 再次调用时 不会触发effect 而是触发scheduler
     obj.foo++;
     expect(scheduler).toHaveBeenCalledTimes(1);
     expect(dummy).toBe(1);
+
+    //需要要调用指定的run触发
     run();
     expect(dummy).toBe(2);
+  });
+  it("stop", () => {
+    let dummpy;
+    const obj = reactive({ prop: 1 });
+    const runner = effect(() => {
+      dummpy = obj.prop;
+    });
+    obj.prop = 2;
+    expect(dummpy).toBe(2);
+    // 调用stop后停止触发effect
+    stop(runner);
+    obj.prop = 3;
+    // 手动正常触发
+    runner();
+    expect(dummpy).toBe(3);
   });
 });
