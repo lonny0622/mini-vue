@@ -74,4 +74,22 @@ describe("effect", () => {
     runner();
     expect(dummpy).toBe(3);
   });
+  it("onStop", () => {
+    const obj = reactive({
+      foo: 1,
+    });
+    const onStop = jest.fn();
+    let dummy;
+    const runner = effect(
+      () => {
+        dummy = obj.foo;
+      },
+      {
+        onStop,
+      }
+    );
+    //调用stop时会触发onStop函数，进行一些额外的处理
+    stop(runner);
+    expect(onStop).toBeCalledTimes(1);
+  });
 });

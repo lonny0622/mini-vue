@@ -1,8 +1,16 @@
+import { extend } from "../shared";
+
 class ReactiveEffect {
+  // effect函数
   private _fn: Function;
+  // 传入 scheduler 时会在状态改变时调用 scheduler 而不是 effect
   public scheduler: Function | null = null;
+  // 保存所有依赖便于stop清空
   public deps = [];
+  // 用于记录当前跟踪状态，调用stop后停止跟踪，不会自动触发effect
   private _active = true;
+  // 调用 stop 时触发这个函数做一些额外的处理
+  public onStop?: () => void;
   constructor(fn: Function, scheduler?: Function) {
     this._fn = fn;
     if (scheduler) this.scheduler = scheduler;
@@ -14,6 +22,9 @@ class ReactiveEffect {
   stop() {
     if (this._active) {
       cleanupEffect(this);
+      if (this.onStop) {
+        this.onStop();
+      }
       this._active = false;
     }
   }
@@ -38,6 +49,7 @@ export function track(target: object, key: any) {
   if (!dep) {
     depsMap.set(key, (dep = new Set()));
   }
+  if (!activeEffect) return;
   //并存储effect
   dep.add(activeEffect);
   //同时保存对应的dep以方便调用stop时进行删除
@@ -66,6 +78,7 @@ export function trigger(target: object, key: any) {
 let activeEffect: any;
 export function effect(fn: Function, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler);
+  extend(_effect, options);
   _effect.run();
   const runner: any = _effect.run.bind(_effect);
   runner.effect = _effect;
