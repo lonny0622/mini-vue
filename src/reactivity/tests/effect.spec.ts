@@ -60,19 +60,20 @@ describe("effect", () => {
     expect(dummy).toBe(2);
   });
   it("stop", () => {
-    let dummpy;
+    let dummy;
     const obj = reactive({ prop: 1 });
     const runner = effect(() => {
-      dummpy = obj.prop;
+      dummy = obj.prop;
     });
     obj.prop = 2;
-    expect(dummpy).toBe(2);
+    expect(dummy).toBe(2);
     // 调用stop后停止触发effect
     stop(runner);
-    obj.prop = 3;
+    obj.prop++;
+    expect(dummy).toBe(2);
     // 手动正常触发
     runner();
-    expect(dummpy).toBe(3);
+    expect(dummy).toBe(3);
   });
   it("onStop", () => {
     const obj = reactive({

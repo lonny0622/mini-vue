@@ -1,5 +1,8 @@
 import { extend } from "../shared";
 
+//保证只有一个活动的effect
+let activeEffect: any;
+let shouldTrack: boolean = false;
 class ReactiveEffect {
   // effect函数
   private _fn: Function;
@@ -17,7 +20,19 @@ class ReactiveEffect {
   }
   run() {
     activeEffect = this;
-    return this._fn();
+    // 会收集依赖
+    // shouldTrack来做区分
+    if (!this._active) {
+      return this._fn();
+    }
+    shouldTrack = true;
+    activeEffect = this;
+    const result = this._fn();
+
+    // reset
+    shouldTrack = false;
+
+    return result;
   }
   stop() {
     if (this._active) {
@@ -32,10 +47,12 @@ class ReactiveEffect {
 //删除effect
 function cleanupEffect(effect: ReactiveEffect) {
   effect.deps.forEach((dep: any) => dep.delete(effect));
+  effect.deps.length = 0;
 }
 //用于保存不同对象的depsMap
 const targetMap = new WeakMap();
 export function track(target: object, key: any) {
+  if (!isTracking()) return;
   // target -> key -> dep
   // const dep = new Set();
   // 先获取到指定对象的depsMap
@@ -44,16 +61,20 @@ export function track(target: object, key: any) {
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()));
   }
-  let dep = depsMap.get(key);
+  let dep: Set<any> = depsMap.get(key);
   //如果该属性的dep还没有被映射上去，我们将这个dep映射到depsMap
   if (!dep) {
     depsMap.set(key, (dep = new Set()));
   }
-  if (!activeEffect) return;
+  if (dep.has(activeEffect)) return;
   //并存储effect
   dep.add(activeEffect);
   //同时保存对应的dep以方便调用stop时进行删除
   activeEffect.deps.push(dep);
+}
+
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target: object, key: any) {
@@ -74,8 +95,6 @@ export function trigger(target: object, key: any) {
   }
 }
 
-//保证只有一个活动的effect
-let activeEffect: any;
 export function effect(fn: Function, options: any = {}) {
   const _effect = new ReactiveEffect(fn, options.scheduler);
   extend(_effect, options);
