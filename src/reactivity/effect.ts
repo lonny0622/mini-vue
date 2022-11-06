@@ -3,7 +3,7 @@ import { extend } from "../shared";
 //保证只有一个活动的effect
 let activeEffect: any;
 let shouldTrack: boolean = false;
-class ReactiveEffect {
+export class ReactiveEffect {
     // effect函数
     private _fn: Function;
     // 传入 scheduler 时会在状态改变时调用 scheduler 而不是 effect
