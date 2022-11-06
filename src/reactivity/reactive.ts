@@ -2,6 +2,7 @@ import {
     mutableHandlers,
     ReactiveFlags,
     readonlyHandlers,
+    shallowReadonlyHandlers,
 } from "./baseHandlers";
 
 export function reactive(raw: any) {
@@ -10,6 +11,10 @@ export function reactive(raw: any) {
 
 export function readonly(raw: any) {
     return createActivityObject(raw, readonlyHandlers);
+}
+
+export function shallowReadonly(raw: any) {
+    return createActivityObject(raw, shallowReadonlyHandlers);
 }
 
 export function isReactive(value: any) {
