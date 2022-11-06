@@ -66,6 +66,10 @@ export function track(target: object, key: any) {
     if (!dep) {
         depsMap.set(key, (dep = new Set()));
     }
+    trackEffects(dep);
+}
+
+export function trackEffects(dep: Set<any>) {
     if (dep.has(activeEffect)) return;
     //并存储effect
     dep.add(activeEffect);
@@ -73,7 +77,7 @@ export function track(target: object, key: any) {
     activeEffect.deps.push(dep);
 }
 
-function isTracking() {
+export function isTracking() {
     return shouldTrack && activeEffect !== undefined;
 }
 
@@ -83,6 +87,10 @@ export function trigger(target: object, key: any) {
     if (!depsMap) return;
     //首先我们要通过key获取这个属性的dep
     let dep = depsMap.get(key);
+    triggerEffects(dep);
+}
+
+export function triggerEffects(dep: Set<any>) {
     if (dep) {
         //遍历dep运行里面的effect
         dep.forEach((effect: ReactiveEffect) => {
