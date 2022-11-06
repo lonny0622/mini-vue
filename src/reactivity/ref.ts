@@ -33,6 +33,14 @@ class RefImpl {
     }
 }
 
+function trackRefValue(ref: RefImpl) {
+    if (isTracking()) trackEffects(ref.dep);
+}
+
+function convert(value: any) {
+    return isObject(value) ? reactive(value) : value;
+}
+
 export function ref(value: any) {
     return new RefImpl(value);
 }
@@ -46,10 +54,18 @@ export function unRef(ref: any) {
     return isRef(ref) ? ref.value : ref;
 }
 
-function trackRefValue(ref: RefImpl) {
-    if (isTracking()) trackEffects(ref.dep);
-}
-
-function convert(value: any) {
-    return isObject(value) ? reactive(value) : value;
+export function proxyRefs(objectWithRefs: any) {
+    return new Proxy(objectWithRefs, {
+        get(target, key) {
+            // 判断是否为ref对象是就返回.value,不是就直接返回它本身
+            return unRef(Reflect.get(target, key));
+        },
+        set(target, key, value) {
+            if (isRef(target[key]) && !isRef(value)) {
+                return (target[key].value = value);
+            } else {
+                return Reflect.set(target, key, value);
+            }
+        },
+    });
 }
