@@ -1,6 +1,7 @@
 import { isObject } from "../shared";
 import { createComponentInstance, setupComponent } from "./component";
 import { VNode } from "./models";
+import { createVNode } from "./vnode";
 
 export function render(vnode: VNode, container: any) {
     // patch
@@ -26,7 +27,7 @@ function processElement(vnode: VNode, container: any) {
 }
 
 function mountElement(vnode: VNode, container: HTMLElement) {
-    const el = document.createElement(vnode.type);
+    const el = (vnode.el = document.createElement(vnode.type));
     const { children } = vnode;
     if (typeof children === "string") {
         el.textContent = children;
@@ -56,12 +57,15 @@ function processComponent(vnode: VNode, container: any) {
 function mountComponent(vnode: VNode, container: any) {
     const instance = createComponentInstance(vnode);
     setupComponent(instance);
-    setupRenderEffect(instance, container);
+    setupRenderEffect(instance, vnode, container);
 }
-function setupRenderEffect(instance: any, container: any) {
-    const subTree = instance.render();
+function setupRenderEffect(instance: any, vnode: VNode, container: any) {
+    const { proxy } = instance;
+
+    const subTree = instance.render.call(proxy);
     // vnode => patch
     // vnode => element => mountElement
 
     patch(subTree, container);
+    vnode.el = subTree.el;
 }
