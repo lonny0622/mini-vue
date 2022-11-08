@@ -1,25 +1,59 @@
+import { isObject } from "../shared";
 import { createComponentInstance, setupComponent } from "./component";
+import { VNode } from "./models";
 
-export function render(vnode: any, container: any) {
+export function render(vnode: VNode, container: any) {
     // patch
     //
     patch(vnode, container);
 }
 
-function patch(vnode: any, container: any) {
+function patch(vnode: VNode, container: any) {
     // 去去除组件
 
     // TODO: 判断是不是 element
     // 是element 就应该处理 element
-    processElement();
 
-    processComponent(vnode, container);
+    if (typeof vnode.type === "string") {
+        processElement(vnode, container);
+    } else if (isObject(vnode.type)) {
+        processComponent(vnode, container);
+    }
 }
-function processComponent(vnode: any, container: any) {
+
+function processElement(vnode: VNode, container: any) {
+    mountElement(vnode, container);
+}
+
+function mountElement(vnode: VNode, container: HTMLElement) {
+    const el = document.createElement(vnode.type);
+    const { children } = vnode;
+    if (typeof children === "string") {
+        el.textContent = children;
+    } else if (Array.isArray(children)) {
+        mountChildren(vnode, el);
+    }
+    const { props } = vnode;
+    for (const key in props) {
+        const val = props[key];
+        el.setAttribute(key, val);
+    }
+
+    container.append(el);
+}
+
+function mountChildren(vnode: VNode, container: HTMLElement) {
+    if (vnode.children && Array.isArray(vnode.children))
+        vnode.children.forEach((v: VNode) => {
+            patch(v, container);
+        });
+}
+
+function processComponent(vnode: VNode, container: any) {
     mountComponent(vnode, container);
 }
 
-function mountComponent(vnode: any, container: any) {
+function mountComponent(vnode: VNode, container: any) {
     const instance = createComponentInstance(vnode);
     setupComponent(instance);
     setupRenderEffect(instance, container);
