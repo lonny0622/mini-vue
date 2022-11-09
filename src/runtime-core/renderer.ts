@@ -1,4 +1,5 @@
 import { isObject } from "../shared";
+import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { VNode } from "./models";
 import { createVNode } from "./vnode";
@@ -12,12 +13,12 @@ export function render(vnode: VNode, container: any) {
 function patch(vnode: VNode, container: any) {
     // 去去除组件
 
-    // TODO: 判断是不是 element
+    // 判断是不是 element
     // 是element 就应该处理 element
-
-    if (typeof vnode.type === "string") {
+    const { shapeFlag } = vnode;
+    if (shapeFlag & ShapeFlags.ELEMENT) {
         processElement(vnode, container);
-    } else if (isObject(vnode.type)) {
+    } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
         processComponent(vnode, container);
     }
 }
@@ -28,10 +29,10 @@ function processElement(vnode: VNode, container: any) {
 
 function mountElement(vnode: VNode, container: HTMLElement) {
     const el = (vnode.el = document.createElement(vnode.type));
-    const { children } = vnode;
-    if (typeof children === "string") {
-        el.textContent = children;
-    } else if (Array.isArray(children)) {
+    const { children, shapeFlag } = vnode;
+    if (shapeFlag & ShapeFlags.ELEMENT) {
+        el.textContent = children as string;
+    } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
         mountChildren(vnode, el);
     }
     const { props } = vnode;
@@ -54,12 +55,12 @@ function processComponent(vnode: VNode, container: any) {
     mountComponent(vnode, container);
 }
 
-function mountComponent(vnode: VNode, container: any) {
-    const instance = createComponentInstance(vnode);
+function mountComponent(initialVnode: VNode, container: any) {
+    const instance = createComponentInstance(initialVnode);
     setupComponent(instance);
-    setupRenderEffect(instance, vnode, container);
+    setupRenderEffect(instance, initialVnode, container);
 }
-function setupRenderEffect(instance: any, vnode: VNode, container: any) {
+function setupRenderEffect(instance: any, initialVnode: VNode, container: any) {
     const { proxy } = instance;
 
     const subTree = instance.render.call(proxy);
@@ -67,5 +68,5 @@ function setupRenderEffect(instance: any, vnode: VNode, container: any) {
     // vnode => element => mountElement
 
     patch(subTree, container);
-    vnode.el = subTree.el;
+    initialVnode.el = subTree.el;
 }
