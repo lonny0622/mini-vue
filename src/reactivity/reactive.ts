@@ -1,3 +1,4 @@
+import { isObject } from "../shared";
 import {
     mutableHandlers,
     ReactiveFlags,
@@ -6,15 +7,15 @@ import {
 } from "./baseHandlers";
 
 export function reactive(raw: any) {
-    return createActivityObject(raw, mutableHandlers);
+    return createReactiveObject(raw, mutableHandlers);
 }
 
 export function readonly(raw: any) {
-    return createActivityObject(raw, readonlyHandlers);
+    return createReactiveObject(raw, readonlyHandlers);
 }
 
 export function shallowReadonly(raw: any) {
-    return createActivityObject(raw, shallowReadonlyHandlers);
+    return createReactiveObject(raw, shallowReadonlyHandlers);
 }
 
 export function isReactive(value: any) {
@@ -29,6 +30,10 @@ export function isProxy(value: any) {
     return isReactive(value) || isReadonly(value);
 }
 
-function createActivityObject(raw: any, handlers: any) {
-    return new Proxy(raw, handlers);
+function createReactiveObject(target: any, handlers: any) {
+    if (!isObject(target)) {
+        console.warn(`target ${target} must be an object!`);
+        return target;
+    }
+    return new Proxy(target, handlers);
 }

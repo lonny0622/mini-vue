@@ -55,7 +55,7 @@ export const readonlyHandlers = {
     get: readonlyGet,
     set(target: any, key: string, value: any) {
         // 给出警告
-        console.warn("该对象为readonly");
+        console.warn(`该 ${target} 为 readonly 无法为 ${key} 赋值`);
         return true;
     },
 };

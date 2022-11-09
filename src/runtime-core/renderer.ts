@@ -30,9 +30,9 @@ function processElement(vnode: VNode, container: any) {
 function mountElement(vnode: VNode, container: HTMLElement) {
     const el = (vnode.el = document.createElement(vnode.type));
     const { children, shapeFlag } = vnode;
-    if (shapeFlag & ShapeFlags.ELEMENT) {
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
         el.textContent = children as string;
-    } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         mountChildren(vnode, el);
     }
     const { props } = vnode;
