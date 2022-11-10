@@ -3,9 +3,10 @@ import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { publicInstanceProxyHandlers } from "./componentPublishInstance";
 import { initSlots } from "./componentSlots";
+import { Instance } from "./models";
 
 export function createComponentInstance(vnode: any) {
-    const component = {
+    const component: Instance = {
         vnode,
         type: vnode.type,
         setupState: {},
@@ -19,13 +20,13 @@ export function createComponentInstance(vnode: any) {
     return component;
 }
 
-export function setupComponent(instance: any) {
+export function setupComponent(instance: Instance) {
     initSlots(instance, instance.vnode.children);
     initProps(instance, instance.vnode.props);
     setupStatefulComponent(instance);
 }
 
-function setupStatefulComponent(instance: any) {
+function setupStatefulComponent(instance: Instance) {
     const Component = instance.type;
 
     //ctx
@@ -33,15 +34,18 @@ function setupStatefulComponent(instance: any) {
     const { setup } = Component;
 
     if (setup) {
+        setCurrentInstance(instance);
+
         // function or object
         const setupResult = setup(shallowReadonly(instance.props), {
             emit: instance.emit,
         });
+        currentInstance = null;
         handleSetupResult(instance, setupResult);
     }
 }
 
-function handleSetupResult(instance: { setupState: any }, setupResult: any) {
+function handleSetupResult(instance: Instance, setupResult: any) {
     // function object
     // TODO: 后续要实现function
     if (typeof setupResult === "object") {
@@ -49,9 +53,19 @@ function handleSetupResult(instance: { setupState: any }, setupResult: any) {
     }
     finishComponentSetup(instance);
 }
-function finishComponentSetup(instance: any) {
+function finishComponentSetup(instance: Instance) {
     const Component = instance.type;
     if (Component.render) {
         instance.render = Component.render;
     }
+}
+
+let currentInstance: Instance | null = null;
+
+export function getCurrentInstance() {
+    return currentInstance;
+}
+
+export function setCurrentInstance(instance: Instance) {
+    currentInstance = instance;
 }
