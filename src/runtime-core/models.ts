@@ -12,6 +12,8 @@ export interface Instance {
     setupState: any;
     props: any;
     slots: any;
+    isMounted: boolean;
+    subTree?: any;
     proxy?: any;
     setup?: Function;
     render?: Function;
