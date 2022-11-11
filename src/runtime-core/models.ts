@@ -13,7 +13,7 @@ export interface Instance {
     props: any;
     slots: any;
     isMounted: boolean;
-    subTree?: any;
+    subTree: any;
     proxy?: any;
     setup?: Function;
     render?: Function;

@@ -5,14 +5,18 @@ function createElement(type: string) {
     return document.createElement(type);
 }
 
-function patchProp(el: HTMLElement, key: string, val: any) {
+function patchProp(el: HTMLElement, key: string, preVal: any, nextVal: any) {
     // console.log("---------------patchProp------------------");
     const isOn = (key: string) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
         const event = key.slice(2).toLowerCase();
-        el.addEventListener(event, val);
+        el.addEventListener(event, nextVal);
     } else {
-        el.setAttribute(key, val);
+        if (nextVal === undefined || nextVal === null) {
+            el.removeAttribute(key);
+        } else {
+            el.setAttribute(key, nextVal);
+        }
     }
 }
 
