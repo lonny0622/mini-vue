@@ -15,5 +15,7 @@ export interface Instance {
     proxy?: any;
     setup?: Function;
     render?: Function;
+    parent?: Instance;
+    provides: any;
     emit: Function;
 }

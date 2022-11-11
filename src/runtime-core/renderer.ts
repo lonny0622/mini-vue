@@ -4,19 +4,23 @@ import { createComponentInstance, setupComponent } from "./component";
 import { VNode } from "./models";
 import { createVNode, Fragment, Text } from "./vnode";
 
-export function render(vnode: VNode, container: HTMLElement) {
+export function render(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent?: any
+) {
     // patch
     //
-    patch(vnode, container);
+    patch(vnode, container, parentComponent);
 }
 
-function patch(vnode: VNode, container: HTMLElement) {
+function patch(vnode: VNode, container: HTMLElement, parentComponent: any) {
     const { type, shapeFlag } = vnode;
 
     // Fragment -> 只渲染 children
     switch (type) {
         case Fragment:
-            processFragment(vnode, container);
+            processFragment(vnode, container, parentComponent);
             break;
         case Text:
             processText(vnode, container);
@@ -25,16 +29,20 @@ function patch(vnode: VNode, container: HTMLElement) {
             // 判断是不是 element
             // 是element 就应该处理 element
             if (shapeFlag & ShapeFlags.ELEMENT) {
-                processElement(vnode, container);
+                processElement(vnode, container, parentComponent);
             } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-                processComponent(vnode, container);
+                processComponent(vnode, container, parentComponent);
             }
     }
 }
 
-function processFragment(vnode: VNode, container: HTMLElement) {
+function processFragment(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
     // Implement
-    mountChildren(vnode, container);
+    mountChildren(vnode, container, parentComponent);
 }
 
 function processText(vnode: VNode, container: HTMLElement) {
@@ -43,17 +51,25 @@ function processText(vnode: VNode, container: HTMLElement) {
     container.append(textNode);
 }
 
-function processElement(vnode: VNode, container: HTMLElement) {
-    mountElement(vnode, container);
+function processElement(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
+    mountElement(vnode, container, parentComponent);
 }
 
-function mountElement(vnode: VNode, container: HTMLElement) {
+function mountElement(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
     const el = (vnode.el = document.createElement(vnode.type as string));
     const { children, shapeFlag } = vnode;
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
         el.textContent = children as string;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-        mountChildren(vnode, el);
+        mountChildren(vnode, el, parentComponent);
     }
     const { props } = vnode;
     for (const key in props) {
@@ -71,19 +87,31 @@ function mountElement(vnode: VNode, container: HTMLElement) {
     container.append(el);
 }
 
-function mountChildren(vnode: VNode, container: HTMLElement) {
+function mountChildren(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
     if (vnode.children && Array.isArray(vnode.children))
         vnode.children.forEach((v: VNode) => {
-            patch(v, container);
+            patch(v, container, parentComponent);
         });
 }
 
-function processComponent(vnode: VNode, container: HTMLElement) {
-    mountComponent(vnode, container);
+function processComponent(
+    vnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
+    mountComponent(vnode, container, parentComponent);
 }
 
-function mountComponent(initialVnode: VNode, container: HTMLElement) {
-    const instance = createComponentInstance(initialVnode);
+function mountComponent(
+    initialVnode: VNode,
+    container: HTMLElement,
+    parentComponent: any
+) {
+    const instance = createComponentInstance(initialVnode, parentComponent);
     setupComponent(instance);
     setupRenderEffect(instance, initialVnode, container);
 }
@@ -98,6 +126,6 @@ function setupRenderEffect(
     // vnode => patch
     // vnode => element => mountElement
 
-    patch(subTree, container);
+    patch(subTree, container, instance);
     initialVnode.el = subTree.el;
 }
