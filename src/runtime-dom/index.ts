@@ -1,4 +1,5 @@
 import { createRenderer } from "../runtime-core";
+import { VNode } from "../runtime-core/models";
 
 function createElement(type: string) {
     // console.log("-------------createElement----------------");
@@ -25,13 +26,26 @@ function insert(el: HTMLElement, container: HTMLElement) {
     container.append(el);
 }
 
+function remove(child: any) {
+    const parent = child.parentNode;
+    if (parent) {
+        parent.removeChild(child);
+    }
+}
+
+function setElementText(el: HTMLElement, text: string) {
+    el.textContent = text;
+}
+
 const renderer: any = createRenderer({
     createElement,
     patchProp,
     insert,
+    remove,
+    setElementText,
 });
 
 export function createApp(...args: any) {
-    return renderer.createApp(...args);
+    return renderer.createApp?.(...args);
 }
 export * from "../runtime-core";
