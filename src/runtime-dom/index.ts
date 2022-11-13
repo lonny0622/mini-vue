@@ -21,9 +21,14 @@ function patchProp(el: HTMLElement, key: string, preVal: any, nextVal: any) {
     }
 }
 
-function insert(el: HTMLElement, container: HTMLElement) {
+function insert(
+    child: HTMLElement,
+    parent: HTMLElement,
+    anchor?: HTMLElement | null
+) {
     // console.log("----------------insert--------------------");
-    container.append(el);
+    // container.append(el);
+    parent.insertBefore(child, anchor || null);
 }
 
 function remove(child: any) {

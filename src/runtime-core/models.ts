@@ -3,6 +3,7 @@ export interface VNode {
     props?: any;
     children?: string | any[];
     shapeFlag: number;
+    key?: string;
     el: any;
 }
 
