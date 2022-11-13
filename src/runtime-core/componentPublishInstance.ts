@@ -1,8 +1,10 @@
 import { hasOwn } from "../shared";
+import { Instance } from "./models";
 
 const publicPropertiesMap: any = {
-    $el: (i: any) => i.vnode.el,
-    $slots: (i: any) => i.slots,
+    $el: (i: Instance) => i.vnode.el,
+    $slots: (i: Instance) => i.slots,
+    $props: (i: Instance) => i.props,
 };
 
 export const publicInstanceProxyHandlers = {

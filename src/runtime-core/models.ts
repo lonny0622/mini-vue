@@ -2,6 +2,7 @@ export interface VNode {
     type: string | Symbol | Object;
     props?: any;
     children?: string | any[];
+    component: Instance | null;
     shapeFlag: number;
     key?: string;
     el: any;
@@ -13,6 +14,8 @@ export interface Instance {
     setupState: any;
     props: any;
     slots: any;
+    next?: VNode | null;
+    update?: any;
     isMounted: boolean;
     subTree: any;
     proxy?: any;

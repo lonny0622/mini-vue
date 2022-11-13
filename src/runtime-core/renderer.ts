@@ -3,6 +3,7 @@ import { effect } from "../reactivity/effect";
 import { EMPTY_OBJ } from "../shared";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppAPI } from "./createApp";
 import { Instance, VNode } from "./models";
 import { Fragment, Text } from "./vnode";
@@ -140,7 +141,14 @@ export function createRenderer(options: RuntimeDomApi) {
     function isSameVNodeType(n1: VNode, n2: VNode) {
         return n1.type === n2.type && n1.key === n2.key;
     }
-
+    /**
+     * 双端对比 diff核心算法
+     * @param c1 旧节点
+     * @param c2 新节点
+     * @param container 容器
+     * @param parentComponent 父组件
+     * @param parentAnchor 父锚点
+     */
     function patchKeyedChildren(
         c1: VNode[],
         c2: VNode[],
@@ -345,14 +353,36 @@ export function createRenderer(options: RuntimeDomApi) {
                 patch(null, v, container, parentComponent, null);
             });
     }
-
+    /**
+     * 组件更新过程
+     * @param n1 旧节点
+     * @param n2 新节点
+     * @param container 容器
+     * @param parentComponent 父组件
+     */
     function processComponent(
         n1: VNode | null,
         n2: VNode,
         container: HTMLElement,
         parentComponent: any
     ) {
-        mountComponent(n2, container, parentComponent);
+        if (!n1) {
+            mountComponent(n2, container, parentComponent);
+        } else {
+            updateComponent(n1, n2);
+        }
+    }
+
+    function updateComponent(n1: VNode, n2: VNode) {
+        const instance = (n2.component = n1.component ?? ({} as Instance));
+        // 只有props变化时才需要更新
+        if (shouldUpdateComponent(n1, n2)) {
+            instance.next = n2;
+            instance?.update();
+        } else {
+            n2.el = n1.el;
+            instance.vnode = n2;
+        }
     }
 
     function mountComponent(
@@ -360,7 +390,10 @@ export function createRenderer(options: RuntimeDomApi) {
         container: HTMLElement,
         parentComponent: any
     ) {
-        const instance = createComponentInstance(initialVnode, parentComponent);
+        const instance = (initialVnode.component = createComponentInstance(
+            initialVnode,
+            parentComponent
+        ));
         setupComponent(instance);
         setupRenderEffect(instance, initialVnode, container);
     }
@@ -369,7 +402,7 @@ export function createRenderer(options: RuntimeDomApi) {
         initialVnode: VNode,
         container: HTMLElement
     ) {
-        effect(() => {
+        instance.update = effect(() => {
             if (!instance.isMounted) {
                 console.log("init");
                 const { proxy } = instance;
@@ -384,22 +417,31 @@ export function createRenderer(options: RuntimeDomApi) {
                 instance.isMounted = true;
             } else {
                 console.log("update");
+                const { next, vnode } = instance;
+                if (next) {
+                    next.el = vnode.el;
+                    updateComponentPreRender(instance, next);
+                }
                 const { proxy } = instance;
                 const subTree = instance.render?.call(proxy);
-                console.log({ subTree });
                 const prevSubTree = instance.subTree;
-                console.log({ prevSubTree });
                 instance.subTree = subTree;
                 // vnode => patch
                 // vnode => element => mountElement
                 patch(prevSubTree, subTree, container, instance, null);
-                // initialVnode.el = subTree.el;
             }
         });
     }
     return {
         createApp: createAppAPI(render),
     };
+}
+
+function updateComponentPreRender(instance: Instance, nextVNode: VNode) {
+    instance.vnode = nextVNode;
+    instance.next = null;
+
+    instance.props = nextVNode.props;
 }
 
 /**
