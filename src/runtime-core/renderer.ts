@@ -6,6 +6,7 @@ import { createComponentInstance, setupComponent } from "./component";
 import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppAPI } from "./createApp";
 import { Instance, VNode } from "./models";
+import { queueJobs } from "./scheduler";
 import { Fragment, Text } from "./vnode";
 
 export function createRenderer(options: RuntimeDomApi) {
@@ -402,35 +403,43 @@ export function createRenderer(options: RuntimeDomApi) {
         initialVnode: VNode,
         container: HTMLElement
     ) {
-        instance.update = effect(() => {
-            if (!instance.isMounted) {
-                console.log("init");
-                const { proxy } = instance;
-                const subTree = (instance.subTree =
-                    instance.render?.call(proxy));
-                console.log(subTree);
-                // vnode => patch
-                // vnode => element => mountElement
-                patch(null, subTree, container, instance, null);
-                initialVnode.el = subTree.el;
+        instance.update = effect(
+            () => {
+                if (!instance.isMounted) {
+                    console.log("init");
+                    const { proxy } = instance;
+                    const subTree = (instance.subTree =
+                        instance.render?.call(proxy));
+                    console.log(subTree);
+                    // vnode => patch
+                    // vnode => element => mountElement
+                    patch(null, subTree, container, instance, null);
+                    initialVnode.el = subTree.el;
 
-                instance.isMounted = true;
-            } else {
-                console.log("update");
-                const { next, vnode } = instance;
-                if (next) {
-                    next.el = vnode.el;
-                    updateComponentPreRender(instance, next);
+                    instance.isMounted = true;
+                } else {
+                    console.log("update");
+                    const { next, vnode } = instance;
+                    if (next) {
+                        next.el = vnode.el;
+                        updateComponentPreRender(instance, next);
+                    }
+                    const { proxy } = instance;
+                    const subTree = instance.render?.call(proxy);
+                    const prevSubTree = instance.subTree;
+                    instance.subTree = subTree;
+                    // vnode => patch
+                    // vnode => element => mountElement
+                    patch(prevSubTree, subTree, container, instance, null);
                 }
-                const { proxy } = instance;
-                const subTree = instance.render?.call(proxy);
-                const prevSubTree = instance.subTree;
-                instance.subTree = subTree;
-                // vnode => patch
-                // vnode => element => mountElement
-                patch(prevSubTree, subTree, container, instance, null);
+            },
+            {
+                scheduler() {
+                    console.log("scheduler");
+                    queueJobs(instance.update);
+                },
             }
-        });
+        );
     }
     return {
         createApp: createAppAPI(render),

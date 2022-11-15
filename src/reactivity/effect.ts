@@ -1,4 +1,5 @@
 import { extend } from "../shared";
+import { EffectOptions } from "./models";
 
 //保证只有一个活动的effect
 let activeEffect: any;
@@ -103,7 +104,7 @@ export function triggerEffects(dep: Set<any>) {
     }
 }
 
-export function effect(fn: Function, options: any = {}) {
+export function effect(fn: Function, options: EffectOptions = {}) {
     const _effect = new ReactiveEffect(fn, options.scheduler);
     extend(_effect, options);
     _effect.run();
