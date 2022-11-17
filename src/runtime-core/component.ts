@@ -52,8 +52,6 @@ function setupStatefulComponent(instance: Instance) {
 }
 
 function handleSetupResult(instance: Instance, setupResult: any) {
-    // function object
-    // TODO: 后续要实现function
     if (typeof setupResult === "object") {
         instance.setupState = proxyRefs(setupResult);
     }
@@ -61,9 +59,13 @@ function handleSetupResult(instance: Instance, setupResult: any) {
 }
 function finishComponentSetup(instance: Instance) {
     const Component = instance.type;
-    if (Component.render) {
-        instance.render = Component.render;
+
+    if (compiler && !Component.render) {
+        if (Component.template) {
+            Component.render = compiler(Component.template);
+        }
     }
+    instance.render = Component.render;
 }
 
 let currentInstance: Instance | null = null;
@@ -74,4 +76,10 @@ export function getCurrentInstance() {
 
 export function setCurrentInstance(instance: Instance) {
     currentInstance = instance;
+}
+
+let compiler: Function;
+
+export function registerRuntimeCompiler(_compiler: Function) {
+    compiler = _compiler;
 }

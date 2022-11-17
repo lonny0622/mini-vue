@@ -408,8 +408,10 @@ export function createRenderer(options: RuntimeDomApi) {
                 if (!instance.isMounted) {
                     console.log("init");
                     const { proxy } = instance;
-                    const subTree = (instance.subTree =
-                        instance.render?.call(proxy));
+                    const subTree = (instance.subTree = instance.render?.call(
+                        proxy,
+                        proxy
+                    ));
                     console.log(subTree);
                     // vnode => patch
                     // vnode => element => mountElement
@@ -425,7 +427,7 @@ export function createRenderer(options: RuntimeDomApi) {
                         updateComponentPreRender(instance, next);
                     }
                     const { proxy } = instance;
-                    const subTree = instance.render?.call(proxy);
+                    const subTree = instance.render?.call(proxy, proxy);
                     const prevSubTree = instance.subTree;
                     instance.subTree = subTree;
                     // vnode => patch
