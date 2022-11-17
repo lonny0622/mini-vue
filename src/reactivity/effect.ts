@@ -1,9 +1,17 @@
 import { extend } from "../shared";
-import { EffectOptions } from "./models";
+export interface EffectOptions {
+    scheduler?: Function;
+    onStop?: Function;
+}
+export interface Runner extends Function {
+    effect?: ReactiveEffect;
+}
 
-//保证只有一个活动的effect
+// 保证只有一个活动的effect
 let activeEffect: any;
+// 标记：是否需要跟踪，避免重复收集依赖
 let shouldTrack: boolean = false;
+
 export class ReactiveEffect {
     // effect函数
     private _fn: Function;
@@ -19,6 +27,9 @@ export class ReactiveEffect {
         this._fn = fn;
         if (scheduler) this.scheduler = scheduler;
     }
+    /**
+     * 调用该函数触发effect实现更新
+     */
     run() {
         activeEffect = this;
         // 会收集依赖
@@ -35,24 +46,36 @@ export class ReactiveEffect {
 
         return result;
     }
+    /**
+     * 停止触发更新
+     */
     stop() {
         if (this._active) {
+            // 清除effect
             cleanupEffect(this);
+            // 如果设置了钩子函数，触发该函数
             if (this.onStop) {
                 this.onStop();
             }
+            // 并将活动状态设为FALSE
             this._active = false;
         }
     }
 }
 //删除effect
 function cleanupEffect(effect: ReactiveEffect) {
-    effect.deps.forEach((dep: any) => dep.delete(effect));
+    effect.deps.forEach((dep: Set<ReactiveEffect>) => dep.delete(effect));
     effect.deps.length = 0;
 }
 //用于保存不同对象的depsMap
 const targetMap = new WeakMap();
-export function track(target: object, key: any) {
+/**
+ * 依赖跟踪
+ * @param target 对象
+ * @param key 属性名
+ * @returns
+ */
+export function track(target: object, key: string) {
     if (!isTracking()) return;
     // target -> key -> dep
     // const dep = new Set();
@@ -67,9 +90,14 @@ export function track(target: object, key: any) {
     if (!dep) {
         depsMap.set(key, (dep = new Set()));
     }
+    // 跟踪依赖
     trackEffects(dep);
 }
-
+/**
+ * 跟踪依赖，将effect 添加到指定dep中
+ * @param dep
+ * @returns
+ */
 export function trackEffects(dep: Set<any>) {
     if (dep.has(activeEffect)) return;
     //并存储effect
@@ -77,12 +105,21 @@ export function trackEffects(dep: Set<any>) {
     //同时保存对应的dep以方便调用stop时进行删除
     activeEffect.deps.push(dep);
 }
-
+/**
+ * 是否应该跟踪该依赖，只有当shouldTrack为true，并且effect活动时才会跟踪
+ * @returns {Boolean}
+ */
 export function isTracking() {
     return shouldTrack && activeEffect !== undefined;
 }
-
-export function trigger(target: object, key: any) {
+/**
+ * 触发器
+ * 获取到依赖对应的effect dep,并交给triggerEffects触发
+ * @param target
+ * @param key
+ * @returns
+ */
+export function trigger(target: object, key: string) {
     //先获取指定对象的depsMap，没有就直接返回
     const depsMap = targetMap.get(target);
     if (!depsMap) return;
@@ -90,11 +127,15 @@ export function trigger(target: object, key: any) {
     let dep = depsMap.get(key);
     triggerEffects(dep);
 }
-
-export function triggerEffects(dep: Set<any>) {
+/**
+ * 触发依赖对应的effect
+ * @param dep
+ */
+export function triggerEffects(dep: Set<ReactiveEffect>) {
     if (dep) {
         //遍历dep运行里面的effect
         dep.forEach((effect: ReactiveEffect) => {
+            // 如果用户设置了scheduler，则只触发scheduler
             if (effect.scheduler) {
                 effect.scheduler();
             } else {
@@ -103,16 +144,24 @@ export function triggerEffects(dep: Set<any>) {
         });
     }
 }
-
+/**
+ * 入口函数，创建effect,为之后的依赖收集等做初始化
+ * @param fn
+ * @param options
+ * @returns 以函数方式调用runner，用户主动触发effect
+ */
 export function effect(fn: Function, options: EffectOptions = {}) {
     const _effect = new ReactiveEffect(fn, options.scheduler);
     extend(_effect, options);
     _effect.run();
-    const runner: any = _effect.run.bind(_effect);
+    const runner: Runner = _effect.run.bind(_effect);
     runner.effect = _effect;
     return runner;
 }
-
-export function stop(runner: any) {
-    runner.effect.stop();
+/**
+ * 停止触发effect
+ * @param runner
+ */
+export function stop(runner: Runner) {
+    runner.effect?.stop();
 }

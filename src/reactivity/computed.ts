@@ -25,7 +25,11 @@ class ComputedImpl {
         return this._value;
     }
 }
-
+/**
+ * 创建computed对象
+ * @param getter
+ * @returns
+ */
 export function computed(getter: Function) {
     return new ComputedImpl(getter);
 }
