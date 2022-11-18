@@ -1,3 +1,4 @@
+import { AstNode } from "../src/ast";
 import { generate } from "../src/codegen";
 import { baseParse } from "../src/parse";
 import { transform } from "../src/transform";
@@ -9,7 +10,7 @@ describe("codegen", () => {
     it("string", () => {
         const ast = baseParse("hi");
         transform(ast);
-        const { code } = generate(ast);
+        const { code } = generate(ast as AstNode);
         // 快照
         // 1. 抓bug
         // 2. 有意的，需主动更新快照
@@ -20,7 +21,7 @@ describe("codegen", () => {
         transform(ast, {
             nodeTransforms: [transformExpression],
         });
-        const { code } = generate(ast);
+        const { code } = generate(ast as AstNode);
         expect(code).toMatchSnapshot();
     });
     it("element", () => {

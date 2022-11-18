@@ -1,8 +1,14 @@
-import { createVNodeCall, NodeTypes } from "../ast";
+import { AstNode, createVNodeCall, NodeTypes } from "../ast";
 import { CREATE_ELEMENT_VNODE } from "../runtimeHelper";
 import { TransformContext } from "../transform";
 
-export function transformElement(node: any, context: TransformContext) {
+/**
+ * 处理Element节点
+ * @param node
+ * @param context
+ * @returns
+ */
+export function transformElement(node: AstNode, context: TransformContext) {
     if (node.type === NodeTypes.ELEMENT) {
         return () => {
             // 中间处理层
@@ -13,7 +19,7 @@ export function transformElement(node: any, context: TransformContext) {
             let vnodeProps;
 
             // children
-            const children = node.children;
+            const children = node.children as (string | AstNode)[];
             let vNodeChildren = children[0];
 
             node.codegenNode = createVNodeCall(

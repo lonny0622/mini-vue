@@ -1,12 +1,19 @@
-import { NodeTypes } from "../ast";
+import { AstNode, NodeTypes } from "../ast";
 import { isText } from "../utils";
 
-export function transformText(node: any) {
+/**
+ * 处理文本包括文字和插值
+ * @param node
+ * @returns
+ */
+export function transformText(node: AstNode) {
     if (node.type === NodeTypes.ELEMENT) {
+        // 如果类型时element则要处理其子节点，调用循环对子节点中的文本、插值分别处理
         return () => {
             let currentContainer;
-            const { children } = node;
+            const children = node.children || [];
 
+            // 循环处理知道碰到element
             for (let i = 0; i < children.length; i++) {
                 const child = children[i];
                 if (isText(child)) {

@@ -5,6 +5,11 @@ import { transformElement } from "./transforms/transformElement";
 import { transformExpression } from "./transforms/transformExpression";
 import { transformText } from "./transforms/transformText";
 
+/**
+ * 编译模块入口
+ * @param template 
+ * @returns 
+ */
 export function baseCompile(template: string) {
     const ast: any = baseParse(template);
     transform(ast, {
