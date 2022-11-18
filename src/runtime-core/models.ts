@@ -1,7 +1,9 @@
+import { SlotChildren } from "./componentSlots";
+
 export interface VNode {
     type: string | Symbol | Object;
     props?: any;
-    children?: string | any[];
+    children?: string | Array<VNode> | VNode | SlotChildren;
     component: Instance | null;
     shapeFlag: number;
     key?: string;

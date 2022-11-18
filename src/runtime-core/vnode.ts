@@ -6,10 +6,17 @@ export const Text = Symbol("Text");
 
 export { createVNode as createElementVNode };
 
+/**
+ * 创建VNode
+ * @param type
+ * @param props
+ * @param children
+ * @returns
+ */
 export function createVNode(
     type: string | symbol,
     props?: any,
-    children?: any
+    children?: string | Array<any> | VNode
 ) {
     const vnode: VNode = {
         type,
@@ -21,6 +28,7 @@ export function createVNode(
         el: null,
     };
 
+    // 判断child的类型并打上标记
     if (typeof children === "string") {
         vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
     } else if (Array.isArray(children)) {
@@ -36,10 +44,20 @@ export function createVNode(
     return vnode;
 }
 
+/**
+ * 创建文本节点
+ * @param text
+ * @returns
+ */
 export function createTextVNode(text: string) {
     return createVNode(Text, {}, text);
 }
 
+/**
+ * 获取节点类型
+ * @param type
+ * @returns
+ */
 function getShapeFlag(type: any) {
     return typeof type === "string"
         ? ShapeFlags.ELEMENT

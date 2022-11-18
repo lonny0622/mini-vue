@@ -1,5 +1,11 @@
 import { VNode } from "./models";
 
+/**
+ * 判断是否需要更新节点
+ * @param prevVNode
+ * @param nextVNode
+ * @returns
+ */
 export function shouldUpdateComponent(prevVNode: VNode, nextVNode: VNode) {
     const { props: prevProps } = prevVNode;
     const { props: nextProps } = nextVNode;
